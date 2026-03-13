@@ -60,8 +60,13 @@ export default component$(() => {
     <div class="app">
       <header class="app-header">
         <div class="header-content">
-          <a href="/" class="logo">
-            Parking
+          <a href="/" class="logo" title="NiCE Prague Parking">
+            <img
+              src="/logo.svg"
+              alt="NiCE Prague Parking"
+              width="28"
+              height="28"
+            />
           </a>
           <nav class="nav">
             <a href="/" class="nav-link">

@@ -133,6 +133,13 @@ export default component$(() => {
               Sign in with Google
             </a>
           </p>
+          <p
+            class="text-center text-muted"
+            style="margin-top: 1rem; font-size: 0.8125rem;"
+          >
+            By signing in you agree to our <a href="/privacy">Privacy Policy</a>{" "}
+            and <a href="/terms">Terms of Service</a>.
+          </p>
         </div>
       </div>
     );
