@@ -14,7 +14,7 @@ export const useUpcomingDays = routeLoader$<DayData[]>(
       console.error("Failed to load upcoming days:", e);
       return [];
     }
-  }
+  },
 );
 
 export default component$(() => {
@@ -73,7 +73,7 @@ export default component$(() => {
 });
 
 export const head: DocumentHead = {
-  title: "Parking - Upcoming",
+  title: "NiCE Prague Parking - Upcoming",
   meta: [
     {
       name: "description",

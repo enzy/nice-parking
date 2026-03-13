@@ -209,7 +209,7 @@ export default component$(() => {
 });
 
 export const head: DocumentHead = {
-  title: "Parking - Day Detail",
+  title: "NiCE Prague Parking - Day Detail",
   meta: [
     {
       name: "description",
