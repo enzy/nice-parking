@@ -6,7 +6,7 @@ interface SpotsGridProps {
   spots: SpotData[];
   rowIndex: number;
   reserveAction: ActionStore<
-    { success: boolean; error?: string },
+    { success: boolean; error?: string; conflict?: boolean },
     Record<string, unknown>,
     true
   >;
@@ -21,8 +21,17 @@ export const SpotsGrid = component$<SpotsGridProps>((props) => {
   const editingSpot = props.editingSpot ?? internalEditingSpot;
   const editValue = props.editValue ?? internalEditValue;
 
+  const actionResult = props.reserveAction.value;
+  const hasConflict =
+    actionResult && !actionResult.success && actionResult.conflict;
+
   return (
     <div class="spots-grid">
+      {hasConflict && (
+        <div class="conflict-banner">
+          <p>{actionResult.error}</p>
+        </div>
+      )}
       {props.spots.map((spot) => {
         if (spot.isDivider) {
           return <div key={spot.colIndex} class="spot-divider" />;
@@ -47,6 +56,11 @@ export const SpotsGrid = component$<SpotsGridProps>((props) => {
               >
                 <input type="hidden" name="rowIndex" value={props.rowIndex} />
                 <input type="hidden" name="colIndex" value={spot.colIndex} />
+                <input
+                  type="hidden"
+                  name="expectedValue"
+                  value={spot.occupant}
+                />
                 <input
                   type="text"
                   name="value"

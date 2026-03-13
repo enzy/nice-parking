@@ -31,12 +31,28 @@ export const useReserveSpot = routeAction$(async (data, { cookie, env }) => {
   const rowIndex = parseInt(data.rowIndex as string, 10);
   const colIndex = parseInt(data.colIndex as string, 10);
   const value = (data.value as string) || "";
+  const expectedValue = data.expectedValue as string | undefined;
 
   try {
     const { updateSpot } = await import("~/services/sheets");
-    await updateSpot(accessToken, env, rowIndex, colIndex, value);
+    await updateSpot(
+      accessToken,
+      env,
+      rowIndex,
+      colIndex,
+      value,
+      expectedValue,
+    );
     return { success: true };
   } catch (e) {
+    const { ConflictError } = await import("~/services/sheets");
+    if (e instanceof ConflictError) {
+      return {
+        success: false,
+        error: "This spot has been modified by someone else. Please try again.",
+        conflict: true,
+      };
+    }
     console.error("Failed to update spot:", e);
     return { success: false, error: "Failed to update" };
   }
@@ -61,15 +77,25 @@ export const useQuickReserve = routeAction$(
       );
       if (!freeSpot) return { success: false, error: "No spots available" };
 
+      // Pass empty string as expectedValue since the spot should be free
       await updateSpot(
         accessToken,
         env,
         dayData.rowIndex,
         freeSpot.colIndex,
         userName,
+        "",
       );
       return { success: true, spotName: freeSpot.name };
     } catch (e) {
+      const { ConflictError } = await import("~/services/sheets");
+      if (e instanceof ConflictError) {
+        return {
+          success: false,
+          error: "This spot was just taken by someone else. Please try again.",
+          conflict: true,
+        };
+      }
       console.error("Quick reserve failed:", e);
       return { success: false, error: "Failed to reserve" };
     }

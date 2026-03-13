@@ -26,7 +26,7 @@ function getSheetsClient(accessToken: string, env: RequestEventBase["env"]) {
  */
 export async function getSheetData(
   accessToken: string,
-  env: RequestEventBase["env"]
+  env: RequestEventBase["env"],
 ): Promise<{ headers: string[]; rows: string[][] }> {
   const sheets = getSheetsClient(accessToken, env);
   const sheetId = env.get("GOOGLE_SHEET_ID")!;
@@ -49,7 +49,7 @@ export async function getSheetData(
 export function parseRow(
   headers: string[],
   row: string[],
-  rowIndex: number
+  rowIndex: number,
 ): DayData {
   const date = row[0] || "";
   const day = row[1] || "";
@@ -75,7 +75,7 @@ export function parseRow(
  */
 export function findRowForDate(
   rows: string[][],
-  dateStr: string
+  dateStr: string,
 ): number | null {
   for (let i = 0; i < rows.length; i++) {
     if (rows[i][0] === dateStr) {
@@ -86,14 +86,56 @@ export function findRowForDate(
 }
 
 /**
+ * Error thrown when the current cell value doesn't match the expected value.
+ * This indicates another user has modified the spot since the page was loaded.
+ */
+export class ConflictError extends Error {
+  public currentValue: string;
+  constructor(currentValue: string) {
+    super("Conflict: spot data has changed since you last loaded the page");
+    this.name = "ConflictError";
+    this.currentValue = currentValue;
+  }
+}
+
+/**
+ * Read the current value of a single cell.
+ */
+export async function readSpot(
+  accessToken: string,
+  env: RequestEventBase["env"],
+  rowIndex: number,
+  colIndex: number,
+): Promise<string> {
+  const sheets = getSheetsClient(accessToken, env);
+  const sheetId = env.get("GOOGLE_SHEET_ID")!;
+
+  const colLetter = columnToLetter(colIndex);
+  const range = `${getSheetName()}!${colLetter}${rowIndex}`;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range,
+  });
+
+  const values = res.data.values;
+  return values?.[0]?.[0] ?? "";
+}
+
+/**
  * Reserve or clear a spot by updating a single cell.
+ *
+ * When `expectedValue` is provided, the current cell content is read first
+ * and compared. If it doesn't match, a `ConflictError` is thrown so the
+ * caller can prompt the user to refresh.
  */
 export async function updateSpot(
   accessToken: string,
   env: RequestEventBase["env"],
   rowIndex: number,
   colIndex: number,
-  value: string
+  value: string,
+  expectedValue?: string,
 ): Promise<void> {
   const sheets = getSheetsClient(accessToken, env);
   const sheetId = env.get("GOOGLE_SHEET_ID")!;
@@ -101,6 +143,14 @@ export async function updateSpot(
   // Convert column index to letter (A=0, B=1, C=2, ...)
   const colLetter = columnToLetter(colIndex);
   const range = `${getSheetName()}!${colLetter}${rowIndex}`;
+
+  // Pre-write conflict check: verify the cell hasn't been modified
+  if (expectedValue !== undefined) {
+    const current = await readSpot(accessToken, env, rowIndex, colIndex);
+    if (current !== expectedValue) {
+      throw new ConflictError(current);
+    }
+  }
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
@@ -131,7 +181,7 @@ function columnToLetter(col: number): string {
 export async function getDayData(
   accessToken: string,
   env: RequestEventBase["env"],
-  dateStr: string
+  dateStr: string,
 ): Promise<DayData | null> {
   const { headers, rows } = await getSheetData(accessToken, env);
   const rowIndex = findRowForDate(rows, dateStr);
@@ -144,7 +194,7 @@ export async function getDayData(
  */
 export async function getTodayData(
   accessToken: string,
-  env: RequestEventBase["env"]
+  env: RequestEventBase["env"],
 ): Promise<DayData | null> {
   const today = formatDate(new Date());
   return getDayData(accessToken, env, today);
@@ -156,7 +206,7 @@ export async function getTodayData(
 export async function getUpcomingDays(
   accessToken: string,
   env: RequestEventBase["env"],
-  count: number = 15
+  count: number = 15,
 ): Promise<DayData[]> {
   const { headers, rows } = await getSheetData(accessToken, env);
   const today = new Date();

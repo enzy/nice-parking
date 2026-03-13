@@ -243,6 +243,20 @@ a:hover {
   gap: 0.75rem;
 }
 
+.conflict-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fee2e2;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .spot-card {
   background: var(--color-surface);
   border: 2px solid var(--color-border);
