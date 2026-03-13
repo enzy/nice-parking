@@ -1,8 +1,5 @@
 import { component$, Slot } from "@builder.io/qwik";
-import {
-  routeLoader$,
-  type RequestHandler,
-} from "@builder.io/qwik-city";
+import { routeLoader$, type RequestHandler } from "@builder.io/qwik-city";
 import { refreshAccessToken, getUserInfo } from "~/services/auth";
 
 export interface UserSession {
@@ -93,6 +90,10 @@ export default component$(() => {
       <main class="main-content">
         <Slot />
       </main>
+      <footer class="app-footer">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
+      </footer>
     </div>
   );
 });
