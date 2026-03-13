@@ -96,8 +96,8 @@ export default component$(() => {
         <Slot />
       </main>
       <footer class="app-footer">
-        <a href="/privacy">Privacy Policy</a>
-        <a href="/terms">Terms of Service</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/terms/">Terms of Service</a>
       </footer>
     </div>
   );

@@ -116,15 +116,14 @@ export default component$(() => {
     return (
       <div class="container">
         <div class="today-header">
-          <h1>Today</h1>
+          <h1>NiCE Prague Parking</h1>
           <p class="date-display">
-            {dayName}, {dateStr}
+            NiCE Parking is an internal tool for the Prague office which allows
+            employees to view and reserve available parking spaces for the day.
           </p>
         </div>
         <div class="card">
           <p class="text-center" style="margin-bottom: 0.75rem;">
-            NiCE Parking is an internal tool for the Prague office which allows
-            employees to view and reserve available parking spaces for the day.
             Sign in with your Google account to get started. When you log in,
             please <b>allow access to Google Spreadsheets</b>.
           </p>
@@ -137,8 +136,9 @@ export default component$(() => {
             class="text-center text-muted"
             style="margin-top: 1rem; font-size: 0.8125rem;"
           >
-            By signing in you agree to our <a href="/privacy">Privacy Policy</a>{" "}
-            and <a href="/terms">Terms of Service</a>.
+            By signing in you agree to our{" "}
+            <a href="/privacy/">Privacy Policy</a> and{" "}
+            <a href="/terms/">Terms of Service</a>.
           </p>
         </div>
       </div>
