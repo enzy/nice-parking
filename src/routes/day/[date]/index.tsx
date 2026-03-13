@@ -20,28 +20,26 @@ export const useDayData = routeLoader$<DayData | null>(
       console.error("Failed to load day data:", e);
       return null;
     }
-  }
+  },
 );
 
-export const useReserveSpot = routeAction$(
-  async (data, { cookie, env }) => {
-    const accessToken = cookie.get("access_token")?.value;
-    if (!accessToken) return { success: false, error: "Not authenticated" };
+export const useReserveSpot = routeAction$(async (data, { cookie, env }) => {
+  const accessToken = cookie.get("access_token")?.value;
+  if (!accessToken) return { success: false, error: "Not authenticated" };
 
-    const rowIndex = parseInt(data.rowIndex as string, 10);
-    const colIndex = parseInt(data.colIndex as string, 10);
-    const value = (data.value as string) || "";
+  const rowIndex = parseInt(data.rowIndex as string, 10);
+  const colIndex = parseInt(data.colIndex as string, 10);
+  const value = (data.value as string) || "";
 
-    try {
-      const { updateSpot } = await import("~/services/sheets");
-      await updateSpot(accessToken, env, rowIndex, colIndex, value);
-      return { success: true };
-    } catch (e) {
-      console.error("Failed to update spot:", e);
-      return { success: false, error: "Failed to update" };
-    }
+  try {
+    const { updateSpot } = await import("~/services/sheets");
+    await updateSpot(accessToken, env, rowIndex, colIndex, value);
+    return { success: true };
+  } catch (e) {
+    console.error("Failed to update spot:", e);
+    return { success: false, error: "Failed to update" };
   }
-);
+});
 
 export const useQuickReserve = routeAction$(
   async (data, { cookie, env, params }) => {
@@ -57,24 +55,24 @@ export const useQuickReserve = routeAction$(
       if (!dayData) return { success: false, error: "No data for this date" };
 
       const freeSpot = dayData.spots.find(
-        (s: { isDivider: boolean; occupant: string }) => !s.isDivider && !s.occupant
+        (s: { isDivider: boolean; occupant: string }) =>
+          !s.isDivider && !s.occupant,
       );
-      if (!freeSpot)
-        return { success: false, error: "No spots available" };
+      if (!freeSpot) return { success: false, error: "No spots available" };
 
       await updateSpot(
         accessToken,
         env,
         dayData.rowIndex,
         freeSpot.colIndex,
-        userName
+        userName,
       );
       return { success: true, spotName: freeSpot.name };
     } catch (e) {
       console.error("Quick reserve failed:", e);
       return { success: false, error: "Failed to reserve" };
     }
-  }
+  },
 );
 
 export default component$(() => {
@@ -110,16 +108,13 @@ export default component$(() => {
   return (
     <div class="container">
       <div class="today-header">
-        <a href="/future" class="back-link">
-          Back to upcoming
-        </a>
-        <h1>{data.day}</h1>
-        <p class="date-display">{data.date}</p>
         <div class="stats">
           <span class="stat-badge">
             {freeCount} / {spots.length} spots free
           </span>
         </div>
+        <h1>{data.day}</h1>
+        <p class="date-display">{data.date}</p>
       </div>
 
       <div class="actions-bar">
@@ -137,12 +132,9 @@ export default component$(() => {
             Reserved {quickReserveAction.value.spotName}!
           </span>
         )}
-        {quickReserveAction.value &&
-          !quickReserveAction.value.success && (
-            <span class="error-msg">
-              {quickReserveAction.value.error}
-            </span>
-          )}
+        {quickReserveAction.value && !quickReserveAction.value.success && (
+          <span class="error-msg">{quickReserveAction.value.error}</span>
+        )}
       </div>
 
       <div class="spots-grid">
