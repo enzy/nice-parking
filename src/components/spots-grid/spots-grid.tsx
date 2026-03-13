@@ -1,17 +1,23 @@
-import { component$, useSignal, type Signal } from "@builder.io/qwik";
-import { Form, type ActionStore } from "@builder.io/qwik-city";
-import type { SpotData } from "~/services/types";
+import { component$, useSignal, type Signal, type QRL } from "@builder.io/qwik";
+import type { DayData, SpotData } from "~/services/types";
+import type { ReserveResult } from "~/services/spot-actions";
 
 interface SpotsGridProps {
   spots: SpotData[];
   rowIndex: number;
-  reserveAction: ActionStore<
-    { success: boolean; error?: string; conflict?: boolean },
-    Record<string, unknown>,
-    true
-  >;
+  polledData?: Signal<DayData | null>;
   editingSpot?: Signal<number | null>;
   editValue?: Signal<string>;
+  changedSpots?: Signal<number[]>;
+  reserveResult?: Signal<ReserveResult | null>;
+  onSave$?: QRL<
+    (
+      rowIndex: number,
+      colIndex: number,
+      value: string,
+      expectedValue: string,
+    ) => Promise<void>
+  >;
 }
 
 export const SpotsGrid = component$<SpotsGridProps>((props) => {
@@ -21,15 +27,14 @@ export const SpotsGrid = component$<SpotsGridProps>((props) => {
   const editingSpot = props.editingSpot ?? internalEditingSpot;
   const editValue = props.editValue ?? internalEditValue;
 
-  const actionResult = props.reserveAction.value;
-  const hasConflict =
-    actionResult && !actionResult.success && actionResult.conflict;
+  const result = props.reserveResult?.value;
+  const hasConflict = result && !result.success && result.conflict;
 
   return (
     <div class="spots-grid">
       {hasConflict && (
         <div class="conflict-banner">
-          <p>{actionResult.error}</p>
+          <p>{result.error}</p>
         </div>
       )}
       {props.spots.map((spot) => {
@@ -39,33 +44,40 @@ export const SpotsGrid = component$<SpotsGridProps>((props) => {
 
         const isEditing = editingSpot.value === spot.colIndex;
         const isFree = !spot.occupant;
+        const isChanged = (props.changedSpots?.value ?? []).includes(
+          spot.colIndex,
+        );
 
         return (
           <div
             key={spot.colIndex}
-            class={`spot-card ${isFree ? "spot-free" : "spot-taken"} ${isEditing ? "spot-editing" : ""}`}
+            class={`spot-card ${isFree ? "spot-free" : "spot-taken"} ${isEditing ? "spot-editing" : ""} ${isChanged ? "spot-changed" : ""}`}
           >
             <div class="spot-name">{spot.name}</div>
 
             {isEditing ? (
-              <Form
-                action={props.reserveAction}
-                onSubmitCompleted$={() => {
+              <form
+                preventdefault:submit
+                onSubmit$={() => {
+                  const colIndex = spot.colIndex;
+                  const value = editValue.value;
+                  const expectedValue = spot.occupant;
                   editingSpot.value = null;
+                  props.onSave$?.(
+                    props.rowIndex,
+                    colIndex,
+                    value,
+                    expectedValue,
+                  );
                 }}
               >
-                <input type="hidden" name="rowIndex" value={props.rowIndex} />
-                <input type="hidden" name="colIndex" value={spot.colIndex} />
-                <input
-                  type="hidden"
-                  name="expectedValue"
-                  value={spot.occupant}
-                />
                 <input
                   type="text"
-                  name="value"
                   class="spot-input"
                   value={editValue.value}
+                  onInput$={(_, el) => {
+                    editValue.value = el.value;
+                  }}
                   placeholder="Enter name..."
                   autoFocus
                 />
@@ -83,7 +95,7 @@ export const SpotsGrid = component$<SpotsGridProps>((props) => {
                     Cancel
                   </button>
                 </div>
-              </Form>
+              </form>
             ) : (
               <div
                 class="spot-occupant"

@@ -1,12 +1,27 @@
-import { component$ } from "@builder.io/qwik";
+import {
+  component$,
+  useComputed$,
+  useSignal,
+  useVisibleTask$,
+} from "@builder.io/qwik";
 import {
   routeLoader$,
-  routeAction$,
-  Form,
+  server$,
   type DocumentHead,
 } from "@builder.io/qwik-city";
+import { PollStatus } from "~/components/poll-status/poll-status";
 import { SpotsGrid } from "~/components/spots-grid/spots-grid";
+import {
+  useSpotPollingSignals,
+  createGlowTimer,
+  pollSpots,
+  setupPolling,
+  optimisticUpdateSpot,
+} from "~/hooks/use-polling";
 import type { DayData } from "~/services/types";
+import type { ReserveResult } from "~/services/spot-actions";
+
+import { useSession } from "../../layout";
 
 export const useDayData = routeLoader$<DayData | null>(
   async ({ cookie, env, params }) => {
@@ -24,91 +39,116 @@ export const useDayData = routeLoader$<DayData | null>(
   },
 );
 
-export const useReserveSpot = routeAction$(async (data, { cookie, env }) => {
-  const accessToken = cookie.get("access_token")?.value;
-  if (!accessToken) return { success: false, error: "Not authenticated" };
-
-  const rowIndex = parseInt(data.rowIndex as string, 10);
-  const colIndex = parseInt(data.colIndex as string, 10);
-  const value = (data.value as string) || "";
-  const expectedValue = data.expectedValue as string | undefined;
+const fetchDayData = server$(async function (
+  dateStr: string,
+): Promise<DayData | null> {
+  const accessToken = this.cookie.get("access_token")?.value;
+  if (!accessToken) return null;
 
   try {
-    const { updateSpot } = await import("~/services/sheets");
-    await updateSpot(
-      accessToken,
-      env,
-      rowIndex,
-      colIndex,
-      value,
-      expectedValue,
-    );
-    return { success: true };
+    const { getDayData } = await import("~/services/sheets");
+    return await getDayData(accessToken, this.env, dateStr);
   } catch (e) {
-    const { ConflictError } = await import("~/services/sheets");
-    if (e instanceof ConflictError) {
-      return {
-        success: false,
-        error: "This spot has been modified by someone else. Please try again.",
-        conflict: true,
-      };
-    }
-    console.error("Failed to update spot:", e);
-    return { success: false, error: "Failed to update" };
+    console.error("Failed to poll day data:", e);
+    return null;
   }
 });
 
-export const useQuickReserve = routeAction$(
-  async (data, { cookie, env, params }) => {
-    const accessToken = cookie.get("access_token")?.value;
-    const userName = cookie.get("user_name")?.value;
-    if (!accessToken || !userName)
-      return { success: false, error: "Not authenticated" };
+const serverReserveSpot = server$(async function (
+  rowIndex: number,
+  colIndex: number,
+  value: string,
+  expectedValue: string,
+): Promise<ReserveResult> {
+  const accessToken = this.cookie.get("access_token")?.value;
+  if (!accessToken) return { success: false, error: "Not authenticated" };
 
-    const dateStr = decodeURIComponent(params.date);
-    try {
-      const { getDayData, updateSpot } = await import("~/services/sheets");
-      const dayData = await getDayData(accessToken, env, dateStr);
-      if (!dayData) return { success: false, error: "No data for this date" };
+  const { reserveSpot } = await import("~/services/spot-actions");
+  return reserveSpot(
+    accessToken,
+    this.env,
+    rowIndex,
+    colIndex,
+    value,
+    expectedValue,
+  );
+});
 
-      const freeSpot = dayData.spots.find(
-        (s: { isDivider: boolean; occupant: string }) =>
-          !s.isDivider && !s.occupant,
-      );
-      if (!freeSpot) return { success: false, error: "No spots available" };
+const serverQuickReserve = server$(async function (
+  dateStr: string,
+): Promise<ReserveResult> {
+  const accessToken = this.cookie.get("access_token")?.value;
+  const userName = this.cookie.get("user_name")?.value;
+  if (!accessToken || !userName)
+    return { success: false, error: "Not authenticated" };
 
-      // Pass empty string as expectedValue since the spot should be free
-      await updateSpot(
-        accessToken,
-        env,
-        dayData.rowIndex,
-        freeSpot.colIndex,
-        userName,
-        "",
-      );
-      return { success: true, spotName: freeSpot.name };
-    } catch (e) {
-      const { ConflictError } = await import("~/services/sheets");
-      if (e instanceof ConflictError) {
-        return {
-          success: false,
-          error: "This spot was just taken by someone else. Please try again.",
-          conflict: true,
-        };
-      }
-      console.error("Quick reserve failed:", e);
-      return { success: false, error: "Failed to reserve" };
-    }
-  },
-);
+  const { quickReserveSpot } = await import("~/services/spot-actions");
+  const { getDayData } = await import("~/services/sheets");
+  return quickReserveSpot(
+    accessToken,
+    this.env,
+    decodeURIComponent(userName),
+    () => getDayData(accessToken, this.env, dateStr),
+  );
+});
 
 export default component$(() => {
   const dayData = useDayData();
-  const reserveAction = useReserveSpot();
-  const quickReserveAction = useQuickReserve();
-  const data = dayData.value;
+  const session = useSession();
 
-  if (!data) {
+  const {
+    polledData,
+    lastUpdated,
+    changedSpots,
+    editingSpot,
+    editValue,
+    secondsAgo,
+  } = useSpotPollingSignals();
+
+  const data = useComputed$(() => polledData.value ?? dayData.value);
+
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(({ cleanup }) => {
+    if (!dayData.value) return;
+
+    polledData.value = dayData.value;
+    lastUpdated.value = Date.now();
+
+    const dateStr = dayData.value.date;
+    const glowTimer = createGlowTimer();
+
+    const doPoll = async () => {
+      try {
+        await pollSpots(
+          () => fetchDayData(dateStr),
+          { polledData, lastUpdated, changedSpots, editingSpot },
+          glowTimer,
+        );
+      } catch (e) {
+        console.error("Poll error:", e);
+      }
+    };
+
+    setupPolling(lastUpdated, secondsAgo, doPoll, cleanup, () => {
+      clearTimeout(glowTimer.current);
+    });
+  });
+
+  const spots = useComputed$(
+    () => data.value?.spots.filter((s) => !s.isDivider) || [],
+  );
+  const freeCount = useComputed$(
+    () => spots.value.filter((s) => !s.occupant).length,
+  );
+
+  // Quick reserve state
+  const quickReserveResult = useSignal<ReserveResult | null>(null);
+  const quickReserveRunning = useSignal(false);
+
+  // Reserve (manual edit) state
+  const reserveResult = useSignal<ReserveResult | null>(null);
+
+  if (!data.value) {
     return (
       <div class="container">
         <div class="today-header">
@@ -126,46 +166,87 @@ export default component$(() => {
     );
   }
 
-  const spots = data.spots.filter((s) => !s.isDivider);
-  const freeCount = spots.filter((s) => !s.occupant).length;
-
   return (
     <div class="container">
       <div class="today-header">
         <div class="stats">
           <span class="stat-badge">
-            {freeCount} / {spots.length} spots free
+            {freeCount.value} / {spots.value.length} spots free
           </span>
         </div>
-        <h1>{data.day}</h1>
-        <p class="date-display">{data.date}</p>
+        <h1>{data.value.day}</h1>
+        <p class="date-display">{data.value.date}</p>
       </div>
 
       <div class="actions-bar">
-        <Form action={quickReserveAction}>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            disabled={freeCount === 0}
-          >
-            Quick Reserve
-          </button>
-        </Form>
-        {quickReserveAction.value?.success && (
+        <button
+          type="button"
+          class="btn btn-primary"
+          disabled={freeCount.value === 0 || quickReserveRunning.value}
+          onClick$={async () => {
+            quickReserveResult.value = null;
+            quickReserveRunning.value = true;
+
+            // Optimistic: find first free spot and mark it as taken
+            const freeSpot = polledData.value?.spots.find(
+              (s) => !s.isDivider && !s.occupant,
+            );
+            let rollback: (() => void) | undefined;
+            if (freeSpot) {
+              rollback = optimisticUpdateSpot(
+                polledData,
+                freeSpot.colIndex,
+                session.value.name,
+              );
+            }
+
+            const result = await serverQuickReserve(data.value?.date ?? "");
+            quickReserveResult.value = result;
+            quickReserveRunning.value = false;
+
+            if (!result.success && rollback) {
+              rollback();
+            }
+          }}
+        >
+          Quick Reserve
+        </button>
+        {quickReserveResult.value?.success && (
           <span class="success-msg">
-            Reserved {quickReserveAction.value.spotName}!
+            Reserved {quickReserveResult.value.spotName}!
           </span>
         )}
-        {quickReserveAction.value && !quickReserveAction.value.success && (
-          <span class="error-msg">{quickReserveAction.value.error}</span>
+        {quickReserveResult.value && !quickReserveResult.value.success && (
+          <span class="error-msg">{quickReserveResult.value.error}</span>
         )}
       </div>
 
       <SpotsGrid
-        spots={data.spots}
-        rowIndex={data.rowIndex}
-        reserveAction={reserveAction}
+        spots={data.value.spots}
+        rowIndex={data.value.rowIndex}
+        polledData={polledData}
+        changedSpots={changedSpots}
+        editingSpot={editingSpot}
+        editValue={editValue}
+        reserveResult={reserveResult}
+        onSave$={async (rowIndex, colIndex, value, expectedValue) => {
+          const rollback = optimisticUpdateSpot(polledData, colIndex, value);
+
+          const result = await serverReserveSpot(
+            rowIndex,
+            colIndex,
+            value,
+            expectedValue,
+          );
+          reserveResult.value = result;
+
+          if (!result.success) {
+            rollback();
+          }
+        }}
       />
+
+      <PollStatus lastUpdated={lastUpdated} secondsAgo={secondsAgo} />
     </div>
   );
 });

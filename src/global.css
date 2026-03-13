@@ -504,6 +504,32 @@ a:hover {
   color: var(--color-text);
 }
 
+/* === Polling Status === */
+.poll-status {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.last-updated {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* === Changed Glow === */
+@keyframes changed-glow {
+  0% {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+  }
+  100% {
+    box-shadow: var(--shadow);
+  }
+}
+
+.spot-changed,
+.day-row-changed {
+  animation: changed-glow 2s ease-out;
+}
+
 /* === Responsive === */
 @media (max-width: 640px) {
   .header-content {
