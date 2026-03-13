@@ -117,9 +117,13 @@ export default component$(() => {
       <div class="container">
         <div class="today-header">
           <h1>NiCE Prague Parking</h1>
-          <p class="date-display">
-            NiCE Parking is an internal tool for the Prague office which allows
-            employees to view and reserve available parking spaces for the day.
+          <p>
+            NiCE Prague Parking is an internal tool for the Prague office which
+            allows employees to view and reserve available parking spaces for
+            the day. The app is backed by a shared Google Spreadsheet — sign in
+            with your Google account to see today's availability in real time,
+            claim a specific spot, or use Quick Reserve to grab the first free
+            one instantly.
           </p>
         </div>
         <div class="card">
