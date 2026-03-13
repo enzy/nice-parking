@@ -1,10 +1,11 @@
-import { component$, useSignal } from "@builder.io/qwik";
+import { component$ } from "@builder.io/qwik";
 import {
   routeLoader$,
   routeAction$,
   Form,
   type DocumentHead,
 } from "@builder.io/qwik-city";
+import { SpotsGrid } from "~/components/spots-grid/spots-grid";
 import type { DayData } from "~/services/types";
 
 export const useDayData = routeLoader$<DayData | null>(
@@ -79,9 +80,6 @@ export default component$(() => {
   const dayData = useDayData();
   const reserveAction = useReserveSpot();
   const quickReserveAction = useQuickReserve();
-  const editingSpot = useSignal<number | null>(null);
-  const editValue = useSignal("");
-
   const data = dayData.value;
 
   if (!data) {
@@ -137,73 +135,11 @@ export default component$(() => {
         )}
       </div>
 
-      <div class="spots-grid">
-        {data.spots.map((spot) => {
-          if (spot.isDivider) {
-            return <div key={spot.colIndex} class="spot-divider" />;
-          }
-
-          const isEditing = editingSpot.value === spot.colIndex;
-          const isFree = !spot.occupant;
-
-          return (
-            <div
-              key={spot.colIndex}
-              class={`spot-card ${isFree ? "spot-free" : "spot-taken"} ${isEditing ? "spot-editing" : ""}`}
-            >
-              <div class="spot-name">{spot.name}</div>
-
-              {isEditing ? (
-                <Form
-                  action={reserveAction}
-                  onSubmitCompleted$={() => {
-                    editingSpot.value = null;
-                  }}
-                >
-                  <input type="hidden" name="rowIndex" value={data.rowIndex} />
-                  <input type="hidden" name="colIndex" value={spot.colIndex} />
-                  <input
-                    type="text"
-                    name="value"
-                    class="spot-input"
-                    value={editValue.value}
-                    placeholder="Enter name..."
-                    autoFocus
-                  />
-                  <div class="spot-actions">
-                    <button type="submit" class="btn btn-small btn-primary">
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-small btn-outline"
-                      onClick$={() => {
-                        editingSpot.value = null;
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </Form>
-              ) : (
-                <div
-                  class="spot-occupant"
-                  onClick$={() => {
-                    editingSpot.value = spot.colIndex;
-                    editValue.value = spot.occupant;
-                  }}
-                >
-                  {isFree ? (
-                    <span class="spot-available">Available</span>
-                  ) : (
-                    <span class="spot-reserved">{spot.occupant}</span>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <SpotsGrid
+        spots={data.spots}
+        rowIndex={data.rowIndex}
+        reserveAction={reserveAction}
+      />
     </div>
   );
 });
