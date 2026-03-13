@@ -122,8 +122,16 @@ export default component$(() => {
           </p>
         </div>
         <div class="card">
-          <p class="text-center text-muted">
-            Please sign in with Google to view parking spots.
+          <p class="text-center" style="margin-bottom: 0.75rem;">
+            NiCE Parking is an internal tool for the Prague office which allows
+            employees to view and reserve available parking spaces for the day.
+            Sign in with your Google account to get started. When you log in,
+            please <b>allow access to Google Spreadsheets</b>.
+          </p>
+          <p class="text-center">
+            <a href="/api/auth" class="btn btn-primary">
+              Sign in with Google
+            </a>
           </p>
         </div>
       </div>
