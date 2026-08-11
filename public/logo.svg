@@ -1,17 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
-  <rect width="36" height="36" rx="8" fill="#2563eb"/>
-  <!-- Car body outline -->
-  <path d="M3 23 L3 21 C3 20.4 3.4 20 4 20 L7 20 L9.5 15.5 C10.2 14.2 11.5 13.5 13 13.5 L21 13.5 C22.2 13.5 23.3 14 24 15 L26.5 18.5 L28 20 L32 20 C32.6 20 33 20.4 33 21 L33 23 C33 23.6 32.6 24 32 24 L31 24 C30.7 22.3 29.2 21 27.5 21 C25.8 21 24.3 22.3 24 24 L11 24 C10.7 22.3 9.2 21 7.5 21 C5.8 21 4.3 22.3 4 24 L4 24 C3.4 24 3 23.6 3 23 Z" stroke="#fff" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
-  <!-- Front window (angular) -->
-  <path d="M21.2 14.5 L17.5 14.5 L16.5 20 L24.5 20 L22.8 17 C22.4 16 21.8 14.5 21.2 14.5 Z" stroke="#fff" stroke-width="1" fill="none" stroke-linejoin="round"/>
-  <!-- Rear window (angular) -->
-  <path d="M14.8 14.5 L13 14.5 C12.2 14.5 11.4 15 11 15.7 L9 20 L15.5 20 Z" stroke="#fff" stroke-width="1" fill="none" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="20" fill="#2563eb"/>
+
+  <!-- P badge circle (top right) -->
+  <circle cx="78" cy="26" r="16" stroke="#fff" stroke-width="3.5" fill="none"/>
+  <!-- P letter built from paths (no font dependency) -->
+  <path d="M72 18 L72 34 M72 18 L77 18 C80.5 18 82.5 20 82.5 22.5 C82.5 25 80.5 27 77 27 L72 27"
+        stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Car body outline - side view sedan -->
+  <!-- Main body: from bumper to bumper -->
+  <path d="
+    M10 68
+    L10 60
+    C10 58.5 11 57.5 12.5 57.5
+    L18 57.5
+    L26 42
+    C27.5 39 30.5 37 34 37
+    L58 37
+    C61 37 63.5 38.5 65 41
+    L72 53
+    L75 57.5
+    L88 57.5
+    C89.5 57.5 90.5 58.5 90.5 60
+    L90.5 68
+    C90.5 69.5 89.5 70.5 88 70.5
+    L82 70.5
+    C81 65 76 61 70 61
+    C64 61 59 65 58 70.5
+    L40 70.5
+    C39 65 34 61 28 61
+    C22 61 17 65 16 70.5
+    L12.5 70.5
+    C11 70.5 10 69.5 10 68 Z
+  " stroke="#fff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+
+  <!-- Front windshield window -->
+  <path d="M57 38.5 L52 53.5 L71 53.5 L65.5 43 C64.5 40.5 62 38.5 59.5 38.5 Z"
+        stroke="#fff" stroke-width="3" stroke-linejoin="round" fill="none"/>
+
+  <!-- Rear window -->
+  <path d="M35 38.5 L33 38.5 C31 38.5 29.5 39.5 28.5 41.5 L21 53.5 L49 53.5 L50 38.5 Z"
+        stroke="#fff" stroke-width="3" stroke-linejoin="round" fill="none"/>
+
   <!-- Left wheel -->
-  <circle cx="7.5" cy="25.5" r="2.5" stroke="#fff" stroke-width="1.2" fill="none"/>
+  <circle cx="28" cy="74" r="11" stroke="#fff" stroke-width="3.5" fill="none"/>
+  <circle cx="28" cy="74" r="4" stroke="#fff" stroke-width="2" fill="none"/>
+
   <!-- Right wheel -->
-  <circle cx="27.5" cy="25.5" r="2.5" stroke="#fff" stroke-width="1.2" fill="none"/>
-  <!-- Parking badge circle -->
-  <circle cx="28.5" cy="9.5" r="5.5" fill="#2563eb" stroke="#fff" stroke-width="1.2"/>
-  <!-- P letter -->
-  <text x="26.3" y="13.2" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#fff">P</text>
+  <circle cx="70" cy="74" r="11" stroke="#fff" stroke-width="3.5" fill="none"/>
+  <circle cx="70" cy="74" r="4" stroke="#fff" stroke-width="2" fill="none"/>
 </svg>
