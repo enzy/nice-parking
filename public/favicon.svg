@@ -1,19 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
   <rect width="36" height="36" rx="8" fill="#2563eb"/>
-  <!-- Car body (lower) -->
-  <rect x="4" y="19" width="28" height="7" rx="2" fill="#fff"/>
-  <!-- Car cabin (upper) with rounded roof -->
-  <path d="M10 19 C11 14, 14 12, 18 12 C22 12, 25 14, 26 19 Z" fill="#fff"/>
-  <!-- Windshield -->
-  <path d="M11.5 19 C12 15.5, 14.5 13.5, 18 13.5 C21.5 13.5, 24 15.5, 24.5 19 Z" fill="#2563eb"/>
+  <!-- Car silhouette: sleek sedan profile -->
+  <path d="M3 22 L3 20 Q3 19 4 19 L6.5 19 Q7.5 16 9.5 14.5 Q12 12.5 15 12 L21 12 Q24 12.5 26.5 14.5 Q28.5 16 29.5 19 L32 19 Q33 19 33 20 L33 22 Q33 23 32 23 L31 23 Q30.5 20.5 28.5 20.5 Q26.5 20.5 26 23 L10 23 Q9.5 20.5 7.5 20.5 Q5.5 20.5 5 23 L4 23 Q3 23 3 22 Z" fill="#fff"/>
   <!-- Left wheel -->
-  <circle cx="10.5" cy="27.5" r="3" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>
-  <circle cx="10.5" cy="27.5" r="1.2" fill="#fff"/>
+  <circle cx="7.5" cy="23.5" r="2.8" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="7.5" cy="23.5" r="1" fill="#fff"/>
   <!-- Right wheel -->
-  <circle cx="25.5" cy="27.5" r="3" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>
-  <circle cx="25.5" cy="27.5" r="1.2" fill="#fff"/>
-  <!-- Left headlight (white) -->
-  <rect x="4" y="20.5" width="3" height="2" rx="0.5" fill="#fff"/>
-  <!-- Right taillight (red) -->
-  <rect x="29" y="20.5" width="3" height="2" rx="0.5" fill="#fca5a5"/>
+  <circle cx="28.5" cy="23.5" r="2.8" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="28.5" cy="23.5" r="1" fill="#fff"/>
+  <!-- A-pillar line -->
+  <line x1="14" y1="12.5" x2="12" y2="19" stroke="#2563eb" stroke-width="1" stroke-linecap="round"/>
+  <!-- C-pillar line -->
+  <line x1="22" y1="12.5" x2="24" y2="19" stroke="#2563eb" stroke-width="1" stroke-linecap="round"/>
 </svg>
