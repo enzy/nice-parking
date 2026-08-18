@@ -4,14 +4,16 @@ import { routeLoader$ } from "@builder.io/qwik-city";
 export interface UserSession {
   isLoggedIn: boolean;
   name: string;
+  githubEnabled: boolean;
 }
 
-export const useSession = routeLoader$<UserSession>(async ({ cookie }) => {
+export const useSession = routeLoader$<UserSession>(async ({ cookie, env }) => {
   const rawName = cookie.get("user_name")?.value;
 
   return {
     isLoggedIn: !!rawName,
     name: rawName ? decodeURIComponent(rawName) : "",
+    githubEnabled: !!env.get("GITHUB_CLIENT_ID"),
   };
 });
 
@@ -49,7 +51,9 @@ export default component$(() => {
             ) : (
               <>
                 <a href="/api/auth" class="btn btn-small btn-outline">Sign in with Google</a>
-                <a href="/api/auth/github" class="btn btn-small btn-primary">Sign in with GitHub</a>
+                {session.value.githubEnabled && (
+                  <a href="/api/auth/github" class="btn btn-small btn-primary">Sign in with GitHub</a>
+                )}
               </>
             )}
           </div>
