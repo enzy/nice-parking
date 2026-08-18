@@ -47,9 +47,10 @@ export default component$(() => {
                 </a>
               </div>
             ) : (
-              <a href="/api/auth" class="btn btn-small btn-primary">
-                Sign in with Google
-              </a>
+              <>
+                <a href="/api/auth" class="btn btn-small btn-outline">Sign in with Google</a>
+                <a href="/api/auth/github" class="btn btn-small btn-primary">Sign in with GitHub</a>
+              </>
             )}
           </div>
         </div>
