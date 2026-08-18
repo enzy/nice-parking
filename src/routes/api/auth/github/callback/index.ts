@@ -20,13 +20,6 @@ export const onGet: RequestHandler = async ({
   const tokens = await getGithubTokensFromCode(env, code);
 
   if (tokens.access_token) {
-    cookie.set("access_token", tokens.access_token, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 3600,
-    });
-
     const user = await getGithubUserInfo(tokens.access_token);
     cookie.set("user_name", encodeURIComponent(user.name), {
       path: "/",
