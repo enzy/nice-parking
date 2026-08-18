@@ -3,17 +3,20 @@ import type { RequestEventBase } from "@builder.io/qwik-city";
 /**
  * Build the GitHub OAuth authorization URL.
  */
-export function getGithubAuthUrl(env: RequestEventBase["env"]): string {
+export function getGithubAuthUrl(env: RequestEventBase["env"], state?: string): string {
   const clientId = env.get("GITHUB_CLIENT_ID");
   const redirectUri =
-    env.get("GITHUB_REDIRECT_URI") ||
-    "http://localhost:5173/api/auth/github/callback";
+    env.get("GITHUB_REDIRECT_URI") || "http://localhost:5173/api/auth/github/callback";
 
   const params = new URLSearchParams({
     client_id: clientId!,
     redirect_uri: redirectUri,
     scope: "read:user",
   });
+
+  if (state) {
+    params.set("state", state);
+  }
 
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
