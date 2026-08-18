@@ -8,14 +8,18 @@ export const onGet: RequestHandler = async ({
   env,
 }) => {
   const code = query.get("code");
-  if (!code) {
+  const stateParam = query.get("state");
+  const stateCookie = cookie.get("github_oauth_state")?.value;
+
+  cookie.delete("github_oauth_state", { path: "/" });
+
+  if (!code || !stateParam || !stateCookie || stateParam !== stateCookie) {
     throw redirect(302, "/");
   }
 
   const tokens = await getGithubTokensFromCode(env, code);
 
   if (tokens.access_token) {
-    // Short-lived access token (used only to fetch user name at login)
     cookie.set("access_token", tokens.access_token, {
       path: "/",
       httpOnly: true,
@@ -23,7 +27,6 @@ export const onGet: RequestHandler = async ({
       maxAge: 3600,
     });
 
-    // Get user info and store name (long-lived, used to identify reservations)
     const user = await getGithubUserInfo(tokens.access_token);
     cookie.set("user_name", encodeURIComponent(user.name), {
       path: "/",
