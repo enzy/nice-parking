@@ -578,6 +578,7 @@ a:hover {
 }
 
 .availability-badge {
+  display: block;
   position: relative;
   overflow: hidden;
   font-size: 0.75rem;
