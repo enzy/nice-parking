@@ -148,11 +148,10 @@ export const ParkingScene = component$<ParkingSceneProps>((props) => {
               <div
                 class={`bay__car ${isMine ? "bay__car--mine" : ""}`}
                 title={carTitle}
-                onClick$={
-                  isMine
-                    ? () => props.onSave$?.(spot.spotId, "", spot.occupant)
-                    : undefined
-                }
+                onClick$={() => {
+                  if (!isMine) return;
+                  return props.onSave$?.(spot.spotId, "", spot.occupant);
+                }}
               >
                 <svg
                   viewBox={useSide ? SIDE_VB : FRONT_VB}
