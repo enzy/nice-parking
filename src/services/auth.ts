@@ -16,15 +16,24 @@ export interface OAuthProvider {
   isConfigured(env: Env): boolean;
   getAuthUrl(env: Env, state: string): string;
   getTokensFromCode(env: Env, code: string): Promise<{ access_token?: string }>;
-  /**
-   * Resolves to null when the account exists but is not allowed to use the app.
-   * Throws when the provider itself could not answer, so that a GitHub outage is
-   * not reported to the user as "you are not a member".
-   */
-  getUserInfo(env: Env, accessToken: string): Promise<OAuthUser | null>;
+  /** Throws when the provider could not answer, so the callback can fail closed. */
+  getUserInfo(env: Env, accessToken: string): Promise<OAuthUser>;
 }
 
 const DEFAULT_REDIRECT_URI = "http://localhost:5173/api/auth/callback";
+
+/**
+ * Both providers land on the same callback route, so one variable covers both.
+ * `GOOGLE_REDIRECT_URI` is the pre-collapse name, still honoured so a deployment
+ * that has not been switched over yet keeps working.
+ */
+function redirectUri(env: Env): string {
+  return (
+    env.get("OAUTH_REDIRECT_URI") ||
+    env.get("GOOGLE_REDIRECT_URI") ||
+    DEFAULT_REDIRECT_URI
+  );
+}
 
 /** GitHub rejects API requests without a User-Agent. */
 const GITHUB_USER_AGENT = "nice-prague-parking";
@@ -40,7 +49,7 @@ const google: OAuthProvider = {
   getAuthUrl(env, state) {
     const params = new URLSearchParams({
       client_id: env.get("GOOGLE_CLIENT_ID")!,
-      redirect_uri: env.get("GOOGLE_REDIRECT_URI") || DEFAULT_REDIRECT_URI,
+      redirect_uri: redirectUri(env),
       response_type: "code",
       scope: "https://www.googleapis.com/auth/userinfo.profile",
       access_type: "online",
@@ -59,7 +68,7 @@ const google: OAuthProvider = {
         code,
         client_id: env.get("GOOGLE_CLIENT_ID")!,
         client_secret: env.get("GOOGLE_CLIENT_SECRET")!,
-        redirect_uri: env.get("GOOGLE_REDIRECT_URI") || DEFAULT_REDIRECT_URI,
+        redirect_uri: redirectUri(env),
         grant_type: "authorization_code",
       }),
     });
@@ -72,6 +81,9 @@ const google: OAuthProvider = {
     const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    if (!res.ok) {
+      throw new Error(`Google profile request failed with ${res.status}`);
+    }
     const data = await res.json();
     return {
       name: (data.name as string) || "Unknown",
@@ -91,8 +103,8 @@ const github: OAuthProvider = {
   getAuthUrl(env, state) {
     const params = new URLSearchParams({
       client_id: env.get("GITHUB_CLIENT_ID")!,
-      redirect_uri: env.get("GITHUB_REDIRECT_URI") || DEFAULT_REDIRECT_URI,
-      scope: "read:user read:org",
+      redirect_uri: redirectUri(env),
+      scope: "read:user",
       allow_signup: "false",
       state,
     });
@@ -111,7 +123,7 @@ const github: OAuthProvider = {
         code,
         client_id: env.get("GITHUB_CLIENT_ID")!,
         client_secret: env.get("GITHUB_CLIENT_SECRET")!,
-        redirect_uri: env.get("GITHUB_REDIRECT_URI") || DEFAULT_REDIRECT_URI,
+        redirect_uri: redirectUri(env),
       }),
     });
 
@@ -120,32 +132,13 @@ const github: OAuthProvider = {
     return { access_token: data.access_token };
   },
 
-  async getUserInfo(env, accessToken) {
+  async getUserInfo(_env, accessToken) {
     const headers = {
       Authorization: `Bearer ${accessToken}`,
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": GITHUB_USER_AGENT,
     };
-
-    const org = env.get("GITHUB_ORG") || "BrandEmbassy";
-    const membershipRes = await fetch(
-      `https://api.github.com/user/memberships/orgs/${org}`,
-      { headers },
-    );
-    // 404 is how GitHub answers for an account that is not in the org at all.
-    if (membershipRes.status === 404) {
-      return null;
-    }
-    if (!membershipRes.ok) {
-      throw new Error(
-        `GitHub org membership check failed with ${membershipRes.status}`,
-      );
-    }
-    const membership = await membershipRes.json();
-    if (membership.state !== "active") {
-      return null;
-    }
 
     const res = await fetch("https://api.github.com/user", { headers });
     if (!res.ok) {

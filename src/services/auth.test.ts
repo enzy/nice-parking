@@ -10,21 +10,15 @@ function makeEnv(values: Record<string, string> = {}): Env {
 const githubEnv = makeEnv({
   GITHUB_CLIENT_ID: "gh-client",
   GITHUB_CLIENT_SECRET: "gh-secret",
-  GITHUB_REDIRECT_URI: "https://parking.test/api/auth/callback",
-  GITHUB_ORG: "BrandEmbassy",
+  OAUTH_REDIRECT_URI: "https://parking.test/api/auth/callback",
 });
 
 function jsonResponse(body: unknown, ok = true, status = ok ? 200 : 404) {
   return { ok, status, json: async () => body } as Response;
 }
 
-/** Answers the membership call first, then the /user call. */
-function mockGithubFetch(membership: Response, user?: Response) {
-  const fetchMock = vi.fn();
-  fetchMock.mockResolvedValueOnce(membership);
-  if (user) {
-    fetchMock.mockResolvedValueOnce(user);
-  }
+function mockFetch(response: Response) {
+  const fetchMock = vi.fn().mockResolvedValue(response);
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -90,14 +84,14 @@ describe("google.getAuthUrl", () => {
 });
 
 describe("github.getAuthUrl", () => {
-  it("targets GitHub with the read:user read:org scope and the state", () => {
+  it("targets GitHub with the read:user scope and the state", () => {
     const url = new URL(PROVIDERS.github.getAuthUrl(githubEnv, "nonce-2"));
 
     expect(url.origin + url.pathname).toBe(
       "https://github.com/login/oauth/authorize",
     );
     expect(url.searchParams.get("client_id")).toBe("gh-client");
-    expect(url.searchParams.get("scope")).toBe("read:user read:org");
+    expect(url.searchParams.get("scope")).toBe("read:user");
     expect(url.searchParams.get("state")).toBe("nonce-2");
     expect(url.searchParams.get("redirect_uri")).toBe(
       "https://parking.test/api/auth/callback",
@@ -142,9 +136,8 @@ describe("github.getTokensFromCode", () => {
 });
 
 describe("github.getUserInfo", () => {
-  it("returns the profile name for an active org member", async () => {
-    const fetchMock = mockGithubFetch(
-      jsonResponse({ state: "active" }),
+  it("returns the profile name and avatar", async () => {
+    const fetchMock = mockFetch(
       jsonResponse({
         name: "Martin Kolaci",
         login: "kolaczek",
@@ -158,15 +151,12 @@ describe("github.getUserInfo", () => {
       name: "Martin Kolaci",
       picture: "https://avatars.test/1",
     });
-    expect(fetchMock.mock.calls[0][0]).toBe(
-      "https://api.github.com/user/memberships/orgs/BrandEmbassy",
-    );
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.github.com/user");
     expect(fetchMock.mock.calls[0][1].headers["User-Agent"]).toBeTruthy();
   });
 
   it("falls back to the login when the profile name is not set", async () => {
-    mockGithubFetch(
-      jsonResponse({ state: "active" }),
+    mockFetch(
       jsonResponse({ name: null, login: "kolaczek", avatar_url: null }),
     );
 
@@ -175,52 +165,70 @@ describe("github.getUserInfo", () => {
     expect(user).toEqual({ name: "kolaczek", picture: "" });
   });
 
-  it("rejects an account that is not a member of the org", async () => {
-    mockGithubFetch(jsonResponse({ message: "Not Found" }, false, 404));
-
-    expect(
-      await PROVIDERS.github.getUserInfo(githubEnv, "gho_token"),
-    ).toBeNull();
-  });
-
-  it("rejects a membership that is not active yet", async () => {
-    mockGithubFetch(jsonResponse({ state: "pending" }));
-
-    expect(
-      await PROVIDERS.github.getUserInfo(githubEnv, "gho_token"),
-    ).toBeNull();
-  });
-
-  it("throws when the membership call fails for any other reason", async () => {
-    mockGithubFetch(jsonResponse({ message: "Bad credentials" }, false, 401));
-
-    await expect(
-      PROVIDERS.github.getUserInfo(githubEnv, "gho_token"),
-    ).rejects.toThrow("GitHub org membership check failed with 401");
-  });
-
   it("throws when the profile call fails", async () => {
-    mockGithubFetch(
-      jsonResponse({ state: "active" }),
-      jsonResponse({ message: "Bad credentials" }, false, 401),
-    );
+    mockFetch(jsonResponse({ message: "Bad credentials" }, false, 401));
 
     await expect(
       PROVIDERS.github.getUserInfo(githubEnv, "gho_token"),
     ).rejects.toThrow("GitHub profile request failed with 401");
   });
+});
 
-  it("defaults the org to BrandEmbassy", async () => {
-    const fetchMock = mockGithubFetch(
-      jsonResponse({ state: "active" }),
-      jsonResponse({ name: "Someone", login: "someone" }),
+describe("google.getUserInfo", () => {
+  it("returns the profile name and picture", async () => {
+    mockFetch(
+      jsonResponse({ name: "Matej Simek", picture: "https://pics.test/1" }),
     );
 
-    await PROVIDERS.github.getUserInfo(
-      makeEnv({ GITHUB_CLIENT_ID: "gh-client" }),
-      "gho_token",
-    );
+    const user = await PROVIDERS.google.getUserInfo(makeEnv(), "ya29_token");
 
-    expect(fetchMock.mock.calls[0][0]).toContain("/orgs/BrandEmbassy");
+    expect(user).toEqual({
+      name: "Matej Simek",
+      picture: "https://pics.test/1",
+    });
+  });
+
+  it("throws instead of returning an Unknown user when Google fails", async () => {
+    mockFetch(jsonResponse({ error: "invalid_credentials" }, false, 401));
+
+    await expect(
+      PROVIDERS.google.getUserInfo(makeEnv(), "ya29_token"),
+    ).rejects.toThrow("Google profile request failed with 401");
+  });
+});
+
+describe("the redirect uri", () => {
+  it("is shared by both providers", () => {
+    const env = makeEnv({
+      OAUTH_REDIRECT_URI: "https://parking.test/api/auth/callback",
+    });
+
+    for (const provider of [PROVIDERS.google, PROVIDERS.github]) {
+      expect(
+        new URL(provider.getAuthUrl(env, "nonce")).searchParams.get(
+          "redirect_uri",
+        ),
+      ).toBe("https://parking.test/api/auth/callback");
+    }
+  });
+
+  it("still honours the pre-collapse GOOGLE_REDIRECT_URI", () => {
+    const env = makeEnv({
+      GOOGLE_REDIRECT_URI: "https://legacy.test/api/auth/callback",
+    });
+
+    expect(
+      new URL(PROVIDERS.github.getAuthUrl(env, "nonce")).searchParams.get(
+        "redirect_uri",
+      ),
+    ).toBe("https://legacy.test/api/auth/callback");
+  });
+
+  it("falls back to localhost for local development", () => {
+    expect(
+      new URL(PROVIDERS.google.getAuthUrl(makeEnv(), "nonce")).searchParams.get(
+        "redirect_uri",
+      ),
+    ).toBe("http://localhost:5173/api/auth/callback");
   });
 });

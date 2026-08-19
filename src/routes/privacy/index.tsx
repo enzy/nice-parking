@@ -44,7 +44,7 @@ export default component$(() => {
           <h2>GitHub User Data Accessed</h2>
           <p>
             When you sign in with GitHub, our application requests access to the
-            following specific types of GitHub user data through OAuth 2.0:
+            following specific type of GitHub user data through OAuth 2.0:
           </p>
           <ul>
             <li>
@@ -52,16 +52,11 @@ export default component$(() => {
               <code>read:user</code> scope): Your display name, your username
               (used when no display name is set) and your avatar URL.
             </li>
-            <li>
-              <strong>Organization membership</strong> (via the{" "}
-              <code>read:org</code> scope): Whether you are an active member of
-              the organization allowed to use the Service. This is checked at
-              sign-in only and is not stored.
-            </li>
           </ul>
           <p>
-            We do not access your email address, your repositories, or any other
-            GitHub user data beyond the scopes listed above.
+            We do not access your email address, your organization memberships,
+            your repositories, or any other GitHub user data beyond the scope
+            listed above.
           </p>
         </section>
 
@@ -135,11 +130,6 @@ export default component$(() => {
               data is stored in browser cookies on your device:
               <ul>
                 <li>
-                  <strong>Access token:</strong> Stored as an HTTP-only cookie.
-                  Expires after 1 hour. Used only briefly at login to fetch your
-                  display name.
-                </li>
-                <li>
                   <strong>Display name:</strong> Stored in a browser cookie for
                   identification purposes. Expires after 30 days.
                 </li>
@@ -162,8 +152,8 @@ export default component$(() => {
           <h2>Data Retention and Deletion</h2>
           <p>
             <strong>Session data:</strong> Authentication cookies are
-            automatically deleted by your browser when they expire (access token
-            after 1 hour, display name after 30 days). You can delete all
+            automatically deleted by your browser when they expire (display name
+            after 30 days, sign-in state after 10 minutes). You can delete all
             session data at any time by logging out of the Service, which
             immediately clears all authentication cookies.
           </p>

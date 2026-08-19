@@ -21,11 +21,9 @@ cp .env.example .env
 | --------------------------- | ----------------------------------------------------- | -------- |
 | `GOOGLE_CLIENT_ID`          | Google OAuth 2.0 Client ID                            | Yes      |
 | `GOOGLE_CLIENT_SECRET`      | Google OAuth 2.0 Client Secret                        | Yes      |
-| `GOOGLE_REDIRECT_URI`       | Callback URL, defaults to the localhost one           | No       |
 | `GITHUB_CLIENT_ID`          | GitHub OAuth app Client ID                            | No       |
 | `GITHUB_CLIENT_SECRET`      | GitHub OAuth app Client Secret                        | No       |
-| `GITHUB_REDIRECT_URI`       | Callback URL, defaults to the localhost one           | No       |
-| `GITHUB_ORG`                | GitHub org whose members may sign in (`BrandEmbassy`) | No       |
+| `OAUTH_REDIRECT_URI`        | Callback URL for both providers, localhost by default | No       |
 | `PUBLIC_SPACETIMEDB_MODULE` | Database name                                         | Yes      |
 | `PUBLIC_SPACETIMEDB_URI`    | Database cluster                                      | Yes      |
 | `API_KEYS`                  | Comma-separated API keys for REST API access          | No       |
@@ -34,13 +32,13 @@ cp .env.example .env
 
 Users sign in with Google or with GitHub; both providers land on the same
 `/api/auth/callback` route and the provider is chosen with `/api/auth?provider=github`.
-GitHub sign-in is restricted to **active members of the `GITHUB_ORG` organization**
-(`BrandEmbassy` by default) — everyone else is rejected. Leave the `GITHUB_*`
-variables unset and the GitHub button simply will not work.
+Leave the `GITHUB_*` variables unset and the GitHub button simply will not work.
 
-Reservations are keyed by the display name the provider returns (`name`, falling back
-to the `@login` for GitHub accounts with no name set), so signing in through a
-different provider than usual can produce a different name.
+Sign-in is **not an access control** — the parking data is public by design. It exists
+to deter bots and to prefill the reservation name, so any Google or GitHub account is
+accepted. Reservations are keyed by the display name the provider returns (`name`,
+falling back to the `@login` for GitHub accounts with no name set), so signing in
+through a different provider than usual can produce a different name.
 
 ## Project Structure
 
@@ -146,6 +144,6 @@ A REST API (`/api/v1`) is available for AI agent and programmatic access. Authen
 ### Production Checklist
 
 - Set `ORIGIN` to your actual domain (e.g. `https://parking.example.com`) -- required for CSRF protection
-- Update `GOOGLE_REDIRECT_URI` in your Google Cloud Console to match your production callback URL (`https://your-domain.com/api/auth/callback`)
-- Set `GITHUB_REDIRECT_URI` to the same callback URL and register it as the Authorization callback URL of your GitHub OAuth app
+- Set `OAUTH_REDIRECT_URI` to your production callback URL (`https://your-domain.com/api/auth/callback`) — it defaults to the localhost one, so a deployment that leaves it unset will bounce users to `localhost:5173`
+- Register that same URL in your Google Cloud Console and as the Authorization callback URL of your GitHub OAuth app
 - Ensure outbound HTTPS access to `accounts.google.com`, `googleapis.com`, `github.com` and `api.github.com`

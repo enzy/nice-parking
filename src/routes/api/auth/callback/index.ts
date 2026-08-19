@@ -23,33 +23,19 @@ export const onGet: RequestHandler = async ({
 
   const provider = PROVIDERS[providerId];
 
-  let accessToken: string | undefined;
-  let user: OAuthUser | null = null;
+  let user: OAuthUser;
   try {
-    accessToken = (await provider.getTokensFromCode(env, code)).access_token;
-    if (accessToken) {
-      // Also checks the provider allows this account to use the app
-      user = await provider.getUserInfo(env, accessToken);
+    const { access_token: accessToken } = await provider.getTokensFromCode(
+      env,
+      code,
+    );
+    if (!accessToken) {
+      throw new Error("provider returned no access token");
     }
+    user = await provider.getUserInfo(env, accessToken);
   } catch {
-    // The provider could not answer — not the same as a rejected account
     throw redirect(302, "/?error=auth_failed");
   }
-
-  if (!accessToken) {
-    throw redirect(302, "/?error=auth_failed");
-  }
-  if (!user) {
-    throw redirect(302, "/?error=not_authorized");
-  }
-
-  // Short-lived access token (used only to fetch user name at login)
-  cookie.set("access_token", accessToken, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 3600,
-  });
 
   // Store name (long-lived, used to identify reservations)
   cookie.set("user_name", encodeURIComponent(user.name), {
