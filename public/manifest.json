@@ -1,9 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/web-manifest-combined.json",
   "name": "NiCE Prague Parking",
-  "short_name": "Parking reservation",
+  "short_name": "Parking",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#fff",
-  "description": "Web app for reserving office parking spots, backed by Google Sheets."
+  "theme_color": "#2563eb",
+  "description": "Web app for reserving office parking spots, backed by SpacetimeDB.",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
 }
