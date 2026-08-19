@@ -61,13 +61,7 @@ export default component$(() => {
                   href="/api/auth?provider=google"
                   class="btn btn-small btn-primary"
                 >
-                  Sign in with Google
-                </a>
-                <a
-                  href="/api/auth?provider=github"
-                  class="btn btn-small btn-outline"
-                >
-                  Sign in with GitHub
+                  Sign in
                 </a>
               </div>
             )}
