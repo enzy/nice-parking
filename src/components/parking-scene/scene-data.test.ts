@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+  BAY_LABELS,
   BAY_LAYOUT,
+  SCENE_H,
+  SCENE_W,
   bayBox,
   parseSpotName,
   hueFromName,
@@ -95,5 +98,35 @@ describe("bayBox", () => {
     // left is centred on cx
     expect(parseFloat(box.left)).toBeCloseTo(layout.cx - layout.w / 2, 5);
     expect(parseFloat(box.width)).toBeCloseTo(layout.w, 5);
+  });
+});
+
+describe("BAY_LABELS", () => {
+  it("draws one number per bay the art has a slot for", () => {
+    const labelled = BAY_LABELS.map((l) => l.bay).sort((a, b) => a - b);
+    const laidOut = Object.keys(BAY_LAYOUT)
+      .map(Number)
+      .sort((a, b) => a - b);
+    expect(labelled).toEqual(laidOut);
+  });
+
+  it("places every label inside the scene", () => {
+    for (const l of BAY_LABELS) {
+      expect(l.x).toBeGreaterThan(0);
+      expect(l.x).toBeLessThan(SCENE_W);
+      expect(l.y).toBeGreaterThan(0);
+      expect(l.y).toBeLessThan(SCENE_H);
+      expect(l.fontSize).toBeGreaterThan(0);
+      expect(l.fill).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
+  it("keeps each number clear of the car parked in that bay", () => {
+    for (const l of BAY_LABELS) {
+      // The number is on the wall behind, so its baseline must sit above the
+      // top of the car's box; otherwise the car would cover it.
+      const baseline = (l.y / SCENE_H) * 100;
+      expect(baseline).toBeLessThan(parseFloat(bayBox(BAY_LAYOUT[l.bay]).top));
+    }
   });
 });
