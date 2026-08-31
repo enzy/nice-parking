@@ -1,8 +1,11 @@
 import { component$, type Signal, type QRL } from "@builder.io/qwik";
 import type { SpotData, ReserveResult } from "~/services/types";
 import {
+  BAY_LABELS,
   BAY_LAYOUT,
   CAR_DEFS_HTML,
+  SCENE_H,
+  SCENE_W,
   FRONT_VB,
   SIDE_VB,
   MINE_HUE,
@@ -74,6 +77,39 @@ export const ParkingScene = component$<ParkingSceneProps>((props) => {
           class="parking-scene__defs"
           dangerouslySetInnerHTML={CAR_DEFS_HTML}
         />
+
+        {/*
+          Bay numbers painted on the back wall. They used to be baked into the
+          background image; the current art has them removed, so we draw them.
+          Purely decorative — every bay's number is already announced through the
+          bay's own aria-label — and first in the stage so cars park in front of it.
+        */}
+        <svg
+          aria-hidden="true"
+          class="parking-scene__labels"
+          viewBox={`0 0 ${SCENE_W} ${SCENE_H}`}
+        >
+          <g class="bay-label bay-label--halo">
+            {BAY_LABELS.map((l) => (
+              <text key={l.bay} x={l.x} y={l.y} font-size={l.fontSize}>
+                {l.bay}
+              </text>
+            ))}
+          </g>
+          <g class="bay-label bay-label--paint">
+            {BAY_LABELS.map((l) => (
+              <text
+                key={l.bay}
+                x={l.x}
+                y={l.y}
+                font-size={l.fontSize}
+                fill={l.fill}
+              >
+                {l.bay}
+              </text>
+            ))}
+          </g>
+        </svg>
 
         {props.spots.map((spot) => {
           const parsed = parseSpotName(spot.name);

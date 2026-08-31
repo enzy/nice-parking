@@ -27,6 +27,28 @@ export const RATIO = 662 / 861;
 /** Fixed hue (blue) for the signed-in user's own car, so it stands out. */
 export const MINE_HUE = 210;
 
+/**
+ * Cap height of a digit as a fraction of font-size. Arial, Helvetica, Roboto and
+ * Segoe UI (the app's font stack) all sit within a hair of this, so deriving the
+ * font size from the measured glyph height lands the same size in any of them.
+ */
+const DIGIT_CAP_RATIO = 0.71;
+
+/** Measured cap heights of the painted numbers, in scene user units, per floor. */
+const CAP_H_UPPER = 56;
+const CAP_H_LOWER = 52;
+
+export interface BayLabelArt {
+  /** Glyph centre, in scene user units. */
+  x: number;
+  /** Text baseline, in scene user units. */
+  y: number;
+  /** Cap height of the digits, in scene user units. */
+  capH: number;
+  /** Fill colour, sampled from the painted numbers in the original art. */
+  fill: string;
+}
+
 export interface BayLayout {
   /** Horizontal centre, % of scene width. */
   cx: number;
@@ -38,27 +60,148 @@ export interface BayLayout {
   side: boolean;
   /** Mirror the side car horizontally (points the other way). */
   flip: boolean;
+  /**
+   * Where this bay's number is painted on the back wall. `label.x` is deliberately
+   * not derived from `cx`: the car stands on the floor in perspective while the
+   * number is on the wall behind it, so the two centres differ by a few percent.
+   */
+  label: BayLabelArt;
 }
 
 /**
- * Bay geometry, transcribed from the design prototype's SPOTS array.
- * Keyed by bay number (floor -1: 62-71, floor -2: 86-88). The two floors are
- * both drawn in the single background image, so `ground` already places each bay
- * on the correct floor.
+ * Bay geometry, transcribed from the design prototype's SPOTS array, plus the
+ * geometry of the number painted on the wall behind each bay.
+ *
+ * Keyed by bay number, which is also the number rendered on the wall, so this map
+ * is the single source of truth for which bays the scene knows about. The two
+ * floors are both drawn in the single background image, so `ground` already places
+ * each bay on the correct floor.
  */
 export const BAY_LAYOUT: Record<number, BayLayout> = {
-  71: { cx: 3.4, w: 10.0, ground: 42.2, side: true, flip: true },
-  70: { cx: 10.4, w: 10.0, ground: 42.5, side: true, flip: true },
-  67: { cx: 27.3, w: 10.2, ground: 42.9, side: true, flip: true },
-  66: { cx: 42.4, w: 10.2, ground: 43.1, side: false, flip: false },
-  65: { cx: 54.7, w: 10.2, ground: 43.1, side: false, flip: false },
-  64: { cx: 66.7, w: 10.2, ground: 42.9, side: true, flip: false },
-  63: { cx: 84.0, w: 10.0, ground: 42.5, side: true, flip: false },
-  62: { cx: 96.2, w: 10.0, ground: 42.2, side: true, flip: true },
-  86: { cx: 34.8, w: 10.4, ground: 90.5, side: true, flip: true },
-  87: { cx: 49.6, w: 10.4, ground: 90.8, side: false, flip: false },
-  88: { cx: 64.2, w: 10.4, ground: 90.5, side: true, flip: false },
+  71: {
+    cx: 3.4,
+    w: 10.0,
+    ground: 42.2,
+    side: true,
+    flip: true,
+    label: { x: 78.6, y: 146, capH: CAP_H_UPPER, fill: "#b795bb" },
+  },
+  70: {
+    cx: 10.4,
+    w: 10.0,
+    ground: 42.5,
+    side: true,
+    flip: true,
+    label: { x: 230.5, y: 147, capH: CAP_H_UPPER, fill: "#8dba4e" },
+  },
+  67: {
+    cx: 27.3,
+    w: 10.2,
+    ground: 42.9,
+    side: true,
+    flip: true,
+    label: { x: 428.0, y: 146, capH: CAP_H_UPPER, fill: "#dc604f" },
+  },
+  66: {
+    cx: 42.4,
+    w: 10.2,
+    ground: 43.1,
+    side: false,
+    flip: false,
+    label: { x: 670.5, y: 147, capH: CAP_H_UPPER, fill: "#4599bf" },
+  },
+  65: {
+    cx: 54.7,
+    w: 10.2,
+    ground: 43.1,
+    side: false,
+    flip: false,
+    label: { x: 863.4, y: 147, capH: CAP_H_UPPER, fill: "#8ebb4e" },
+  },
+  64: {
+    cx: 66.7,
+    w: 10.2,
+    ground: 42.9,
+    side: true,
+    flip: false,
+    label: { x: 1056.0, y: 146, capH: CAP_H_UPPER, fill: "#f4bf30" },
+  },
+  63: {
+    cx: 84.0,
+    w: 10.0,
+    ground: 42.5,
+    side: true,
+    flip: false,
+    label: { x: 1289.1, y: 146, capH: CAP_H_UPPER, fill: "#d95f4e" },
+  },
+  62: {
+    cx: 96.2,
+    w: 10.0,
+    ground: 42.2,
+    side: true,
+    flip: true,
+    label: { x: 1503.0, y: 146, capH: CAP_H_UPPER, fill: "#71bab0" },
+  },
+  86: {
+    cx: 34.8,
+    w: 10.4,
+    ground: 90.5,
+    side: true,
+    flip: true,
+    label: { x: 549.9, y: 464, capH: CAP_H_LOWER, fill: "#f3be2f" },
+  },
+  88: {
+    cx: 49.6,
+    w: 10.4,
+    ground: 90.8,
+    side: false,
+    flip: false,
+    label: { x: 779.5, y: 469, capH: CAP_H_LOWER, fill: "#8dba4f" },
+  },
+  89: {
+    cx: 64.2,
+    w: 10.4,
+    ground: 90.5,
+    side: true,
+    flip: false,
+    label: { x: 1008.5, y: 464, capH: CAP_H_LOWER, fill: "#e77335" },
+  },
 };
+
+export interface BayLabel {
+  /** Bay number — also the text that gets drawn. */
+  bay: number;
+  /** Glyph centre, in scene user units. */
+  x: number;
+  /** Text baseline, in scene user units. */
+  y: number;
+  /** Font size, in scene user units. */
+  fontSize: number;
+  /** Fill colour, sampled from the painted numbers in the original art. */
+  fill: string;
+}
+
+/**
+ * The bay numbers painted on the garage's back wall.
+ *
+ * The original background art (parking-bg.png) had them baked in; the current art
+ * (parking-bg.jpg) is the same illustration with them removed, so the app draws
+ * them instead. Position, size and colour were measured off the old art by diffing
+ * the two images — they are irregular because the illustration is in perspective,
+ * so no two bays share a centre and the lower floor's numbers are a little smaller.
+ *
+ * The *text* comes from the BAY_LAYOUT keys rather than a list of its own, so a bay
+ * that gets renumbered is relabelled automatically and the two can never disagree.
+ */
+export const BAY_LABELS: BayLabel[] = Object.entries(BAY_LAYOUT).map(
+  ([bay, layout]) => ({
+    bay: Number(bay),
+    x: layout.label.x,
+    y: layout.label.y,
+    fontSize: layout.label.capH / DIGIT_CAP_RATIO,
+    fill: layout.label.fill,
+  }),
+);
 
 export interface BayBox {
   left: string;
