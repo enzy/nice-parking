@@ -921,7 +921,8 @@ a:hover {
   aspect-ratio: 1584 / 672;
   background: url("/parking-bg.jpg") center / 100% 100% no-repeat;
   border-radius: var(--radius);
-  overflow: hidden;
+  /* Visible so the confirm editor of edge/bottom bays can overhang the art */
+  overflow: visible;
 }
 
 .parking-scene__defs {
@@ -1072,6 +1073,31 @@ a:hover {
   color: #fff;
 }
 
+/* Inline confirm editor, anchored under the bay like the name chip */
+.bay__editor {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: 170px;
+  padding: 8px;
+  background: var(--color-surface);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  animation: banner-appear 0.15s ease-out;
+}
+
+.bay__editor .spot-input {
+  margin-bottom: 0.375rem;
+}
+
+.bay__editor .spot-actions {
+  justify-content: center;
+}
+
 /* Real-time change + conflict animations */
 .bay--changed .bay__car {
   animation: carIn 480ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
@@ -1134,7 +1160,8 @@ a:hover {
   width: 100%;
 }
 
-.parking-scene__fallback .spot-card:disabled {
+/* Someone else's bay — visible but not interactive in the self-service scene */
+.parking-scene__fallback .spot-card.spot-inert {
   cursor: default;
   opacity: 0.85;
 }
